@@ -395,40 +395,61 @@ window.addEventListener('pagehide', ()=> endLogSession(null));
 
 /* ---------- 정몽주 캐릭터 (저작권 안전: 직접 그린 SVG) ---------- */
 figure.innerHTML = `
-<svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg" aria-label="정몽주 캐릭터">
-  <ellipse cx="100" cy="288" rx="60" ry="10" fill="rgba(0,0,0,.35)"/>
-  <!-- robe -->
-  <path d="M58 150 Q60 130 80 124 L120 124 Q140 130 142 150 L156 280 Q100 292 44 280 Z" fill="#2f5d50"/>
-  <path d="M58 150 Q60 130 80 124 L100 124 L100 284 Q70 284 44 280 Z" fill="#356a5b"/>
-  <!-- center band -->
-  <path d="M92 126 L108 126 L112 284 Q100 287 88 284 Z" fill="#7a2218"/>
-  <path d="M96 150 L104 150 L104 270 L96 270 Z" fill="#b08d3f" opacity=".5"/>
-  <!-- sleeves -->
-  <path d="M58 152 Q34 168 38 210 Q54 206 62 188 Z" fill="#356a5b"/>
-  <path d="M142 152 Q166 168 162 210 Q146 206 138 188 Z" fill="#356a5b"/>
-  <!-- collar -->
-  <path d="M80 124 L100 140 L120 124 L116 150 L100 156 L84 150 Z" fill="#f4ede0"/>
-  <!-- neck -->
-  <rect x="92" y="108" width="16" height="22" rx="6" fill="#e6b98f"/>
-  <!-- head -->
-  <ellipse cx="100" cy="88" rx="30" ry="33" fill="#f0c89e"/>
-  <!-- beard -->
-  <path d="M74 96 Q78 128 100 138 Q122 128 126 96 Q116 112 100 112 Q84 112 74 96 Z" fill="#efe9e0"/>
-  <path d="M88 112 Q100 150 112 112 Q100 126 88 112Z" fill="#e4ddd2"/>
-  <!-- mustache -->
-  <path d="M84 92 Q92 98 100 95 Q108 98 116 92 Q108 102 100 100 Q92 102 84 92Z" fill="#d9d2c6"/>
-  <!-- eyes -->
-  <path d="M82 82 Q88 78 94 82" stroke="#3a2a1a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-  <path d="M106 82 Q112 78 118 82" stroke="#3a2a1a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-  <!-- brows -->
-  <path d="M80 72 Q88 68 96 72" stroke="#5a4632" stroke-width="2" fill="none" stroke-linecap="round"/>
-  <path d="M104 72 Q112 68 120 72" stroke="#5a4632" stroke-width="2" fill="none" stroke-linecap="round"/>
-  <!-- gat (hat) -->
-  <ellipse cx="100" cy="58" rx="46" ry="11" fill="#1a1410"/>
-  <ellipse cx="100" cy="56" rx="46" ry="9" fill="#2a2018"/>
-  <path d="M78 56 Q80 30 100 28 Q120 30 122 56 Z" fill="#1a1410"/>
-  <ellipse cx="100" cy="30" rx="22" ry="6" fill="#241a14"/>
-  <path d="M78 56 Q80 30 100 28 Q120 30 122 56" fill="none" stroke="#3a2a1a" stroke-width="1" opacity=".6"/>
+<svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg" aria-label="정몽주 표준영정 캐릭터">
+  <ellipse cx="100" cy="290" rx="62" ry="9" fill="rgba(0,0,0,.32)"/>
+
+  <!-- 사모 날개(모각) — 머리 뒤 아래쪽, 작게 -->
+  <path d="M72 57 Q59 56 54 61 Q60 64 72 63 Z" fill="#14100c"/>
+  <path d="M128 57 Q141 56 146 61 Q140 64 128 63 Z" fill="#14100c"/>
+
+  <!-- 단령(관복) 몸체 -->
+  <path d="M60 150 Q52 132 74 126 L126 126 Q148 132 140 150 L168 288 Q100 301 32 288 Z" fill="#3e4f59"/>
+  <path d="M60 150 Q52 132 74 126 L100 126 L100 296 Q64 292 32 288 Z" fill="#475a64"/>
+  <!-- 소매 자락 -->
+  <path d="M62 150 Q30 172 34 230 Q54 224 66 196 Z" fill="#374751"/>
+  <path d="M138 150 Q170 172 166 230 Q146 224 134 196 Z" fill="#374751"/>
+  <!-- 각대(허리띠) -->
+  <path d="M48 196 Q100 206 152 196 L152 206 Q100 216 48 206 Z" fill="#2c3942"/>
+  <!-- 공수 자세(맞잡은 손, 소매 속) -->
+  <path d="M72 208 Q62 240 84 258 Q100 266 116 258 Q138 240 128 208 Q100 224 72 208 Z" fill="#33424b"/>
+
+  <!-- 둥근 깃(단령) + 흰 동정 -->
+  <path d="M76 132 Q100 160 124 132 L120 123 Q100 118 80 123 Z" fill="#32414a"/>
+  <path d="M90 130 Q100 143 110 130 L108 124 Q100 128 92 124 Z" fill="#ece4d6"/>
+
+  <!-- 목 -->
+  <path d="M90 108 L110 108 L110 128 Q100 135 90 128 Z" fill="#e3b88c"/>
+
+  <!-- 귀·얼굴 -->
+  <ellipse cx="72" cy="88" rx="6" ry="9" fill="#e0b487"/>
+  <ellipse cx="128" cy="88" rx="6" ry="9" fill="#e0b487"/>
+  <ellipse cx="100" cy="83" rx="29" ry="34" fill="#edcaa0"/>
+
+  <!-- 눈썹 -->
+  <path d="M77 74 Q88 69.5 98 74" stroke="#5f4c38" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M102 74 Q112 69.5 123 74" stroke="#5f4c38" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <!-- 눈(또렷하고 점잖은 시선) -->
+  <path d="M80 85 Q88 80.5 96 85 Q88 88.5 80 85 Z" fill="#f3ece0"/>
+  <path d="M104 85 Q112 80.5 120 85 Q112 88.5 104 85 Z" fill="#f3ece0"/>
+  <circle cx="88" cy="85" r="2.4" fill="#2c2118"/>
+  <circle cx="112" cy="85" r="2.4" fill="#2c2118"/>
+  <!-- 코 -->
+  <path d="M100 86 L96 101 Q100 105 104 101" stroke="#d3a273" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+  <!-- 긴 수염(턱~가슴까지 흘러내림) -->
+  <path d="M71 99 Q68 150 100 174 Q132 150 129 99 Q121 124 100 126 Q79 124 71 99 Z" fill="#bdb6a6"/>
+  <path d="M82 124 Q88 152 96 168" stroke="#a39c8b" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+  <path d="M100 126 L100 172" stroke="#a39c8b" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+  <path d="M118 124 Q112 152 104 168" stroke="#a39c8b" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+  <!-- 콧수염(드리운) -->
+  <path d="M80 92 Q90 97 100 95 Q110 97 120 92 Q113 105 100 101 Q87 105 80 92 Z" fill="#b0a999"/>
+
+  <!-- 사모(紗帽): 뒤가 높은 2단 검은 관모 (머리에 밀착, 챙 없음) -->
+  <path d="M73 56 Q72 21 100 18 Q128 21 127 56 Z" fill="#171209"/>
+  <ellipse cx="100" cy="20" rx="20" ry="5" fill="#231a10"/>
+  <path d="M77 58 Q77 37 100 34 Q123 37 123 58 Z" fill="#1f1810"/>
+  <ellipse cx="100" cy="36" rx="16" ry="4.5" fill="#291f14"/>
+  <path d="M84 32 Q88 24 97 22" stroke="#3a3026" stroke-width="2" fill="none" stroke-linecap="round" opacity=".5"/>
 </svg>`;
 
 /* ---------- intro flow ---------- */
