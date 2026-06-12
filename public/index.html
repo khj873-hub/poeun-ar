@@ -680,7 +680,7 @@ async function ask(text){
 
   let reply='';
   try{
-    if(demoMode || !aiEnabled){
+    if(!aiEnabled){ // 서버에 키가 있으면 미리보기여도 실제 AI 대화 사용
       await new Promise(r=>setTimeout(r,900));
       reply = demoReply(text);
     }else{
