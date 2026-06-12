@@ -34,10 +34,11 @@
   #demoBg .stele{position:absolute;left:50%;bottom:30%;transform:translateX(-50%);
     width:34px;height:120px;background:linear-gradient(180deg,#4a443a,#2b2722);border-radius:6px 6px 0 0}
 
-  /* the summoned character (SVG) */
-  #figure{position:absolute;left:50%;bottom:44%;transform:translateX(-50%) translateY(20px);
-    width:172px;max-width:48vw;opacity:0;transition:opacity .8s ease,transform .8s cubic-bezier(.2,.8,.2,1);
-    filter:drop-shadow(0 18px 24px rgba(0,0,0,.55));pointer-events:none;z-index:4}
+  /* the summoned character (표준영정 누끼) */
+  #figure{position:absolute;left:50%;bottom:42%;transform:translateX(-50%) translateY(20px);
+    width:210px;max-width:58vw;opacity:0;transition:opacity .8s ease,transform .8s cubic-bezier(.2,.8,.2,1);
+    filter:drop-shadow(0 14px 22px rgba(0,0,0,.55));pointer-events:none;z-index:4}
+  #figure img{width:100%;display:block}
   #figure.summoned{opacity:1;transform:translateX(-50%) translateY(0)}
   @keyframes float{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-9px)}}
   #figure.summoned.idle{animation:float 4.5s ease-in-out infinite}
@@ -394,69 +395,7 @@ $('#rSkip').onclick = ()=>{ endLogSession(null); $('#rating').classList.remove('
 window.addEventListener('pagehide', ()=> endLogSession(null));
 
 /* ---------- 정몽주 캐릭터 (저작권 안전: 직접 그린 SVG) ---------- */
-figure.innerHTML = `
-<svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg" aria-label="정몽주 표준영정 캐릭터">
-  <ellipse cx="100" cy="290" rx="62" ry="9" fill="rgba(0,0,0,.32)"/>
-
-  <!-- (사모는 머리 위에 그림 아래에서 한 덩어리로) -->
-
-  <!-- 단령(관복) 몸체 -->
-  <path d="M60 150 Q52 132 74 126 L126 126 Q148 132 140 150 L168 288 Q100 301 32 288 Z" fill="#3e4f59"/>
-  <path d="M60 150 Q52 132 74 126 L100 126 L100 296 Q64 292 32 288 Z" fill="#475a64"/>
-  <!-- 소매 자락 -->
-  <path d="M62 150 Q30 172 34 230 Q54 224 66 196 Z" fill="#374751"/>
-  <path d="M138 150 Q170 172 166 230 Q146 224 134 196 Z" fill="#374751"/>
-  <!-- 각대(허리띠) -->
-  <path d="M48 196 Q100 206 152 196 L152 206 Q100 216 48 206 Z" fill="#2c3942"/>
-  <!-- 공수 자세(소매 자락이 손 아래로 드리움) -->
-  <path d="M74 220 Q64 246 86 262 Q100 270 114 262 Q136 246 126 220 Q100 236 74 220 Z" fill="#33424b"/>
-  <!-- 맞잡은 두 손(공수): 한 손이 다른 손을 덮음, 손가락 보임 -->
-  <path d="M79 210 Q79 202 100 202 Q121 202 121 210 Q121 221 100 224 Q79 221 79 210 Z" fill="#e3b88c"/>
-  <path d="M81 211 Q90 207 99 209" stroke="#c4925f" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-  <path d="M88 205 L87 220" stroke="#c4925f" stroke-width="1.3" stroke-linecap="round"/>
-  <path d="M95 204 L94 222" stroke="#c4925f" stroke-width="1.3" stroke-linecap="round"/>
-  <path d="M102 204 L103 222" stroke="#c4925f" stroke-width="1.3" stroke-linecap="round"/>
-  <path d="M109 205 L110 220" stroke="#c4925f" stroke-width="1.3" stroke-linecap="round"/>
-
-  <!-- 둥근 깃(단령) + 흰 동정 -->
-  <path d="M76 132 Q100 160 124 132 L120 123 Q100 118 80 123 Z" fill="#32414a"/>
-  <path d="M90 130 Q100 143 110 130 L108 124 Q100 128 92 124 Z" fill="#ece4d6"/>
-
-  <!-- 목 -->
-  <path d="M90 108 L110 108 L110 128 Q100 135 90 128 Z" fill="#e3b88c"/>
-
-  <!-- 귀·얼굴 -->
-  <ellipse cx="72" cy="88" rx="6" ry="9" fill="#e0b487"/>
-  <ellipse cx="128" cy="88" rx="6" ry="9" fill="#e0b487"/>
-  <ellipse cx="100" cy="83" rx="29" ry="34" fill="#edcaa0"/>
-
-  <!-- 눈썹 -->
-  <path d="M77 74 Q88 69.5 98 74" stroke="#5f4c38" stroke-width="3" fill="none" stroke-linecap="round"/>
-  <path d="M102 74 Q112 69.5 123 74" stroke="#5f4c38" stroke-width="3" fill="none" stroke-linecap="round"/>
-  <!-- 눈(또렷하고 점잖은 시선) -->
-  <path d="M80 85 Q88 80.5 96 85 Q88 88.5 80 85 Z" fill="#f3ece0"/>
-  <path d="M104 85 Q112 80.5 120 85 Q112 88.5 104 85 Z" fill="#f3ece0"/>
-  <circle cx="88" cy="85" r="2.4" fill="#2c2118"/>
-  <circle cx="112" cy="85" r="2.4" fill="#2c2118"/>
-  <!-- 코 -->
-  <path d="M100 86 L96 101 Q100 105 104 101" stroke="#d3a273" stroke-width="2" fill="none" stroke-linecap="round"/>
-
-  <!-- 콧수염 -->
-  <path d="M81 92 Q90 98 100 96 Q110 98 119 92 Q112 104 100 100 Q88 104 81 92 Z" fill="#b3ac9c"/>
-  <!-- 짧은 턱수염 -->
-  <path d="M83 105 Q82 127 100 135 Q118 127 117 105 Q109 118 100 119 Q91 118 83 105 Z" fill="#c2bbac"/>
-  <path d="M92 119 Q100 130 108 119" stroke="#a89f8d" stroke-width="1.3" fill="none" stroke-linecap="round"/>
-
-  <!-- 사모(紗帽): 머리를 덮는 길고 넓은 검은 관모 + 평평한 양옆 날개(모각) -->
-  <ellipse cx="60" cy="60" rx="15" ry="7" fill="#161009"/>
-  <ellipse cx="140" cy="60" rx="15" ry="7" fill="#161009"/>
-  <ellipse cx="57" cy="60" rx="5" ry="4.5" fill="#23190f"/>
-  <ellipse cx="143" cy="60" rx="5" ry="4.5" fill="#23190f"/>
-  <path d="M66 56 Q63 15 100 12 Q137 15 134 56 Z" fill="#161009"/>
-  <ellipse cx="100" cy="16" rx="33" ry="8" fill="#201810"/>
-  <path d="M68 44 Q100 38 132 44" stroke="#231a10" stroke-width="2.5" fill="none" stroke-linecap="round" opacity=".7"/>
-  <path d="M80 28 Q86 19 97 17" stroke="#352b1e" stroke-width="2" fill="none" stroke-linecap="round" opacity=".5"/>
-</svg>`;
+figure.innerHTML = `<img src="/poeun-figure.png" alt="정몽주 표준영정" style="width:100%;display:block" />`;
 
 /* ---------- intro flow ---------- */
 function enterPreview(){ $('#intro').style.display='none'; $('#tokengate').classList.remove('show'); demoBg.classList.add('show'); demoMode=true; askKeyThen(initDemoStage); }
