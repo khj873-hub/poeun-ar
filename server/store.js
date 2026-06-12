@@ -5,7 +5,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DATA_DIR = path.join(__dirname, 'data');
+// Railway 등에서 영속 볼륨을 쓰려면 DATA_DIR 환경변수로 마운트 경로 지정
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 const FILE = path.join(DATA_DIR, 'sessions.json');
 
 let db = { sessions: {} };

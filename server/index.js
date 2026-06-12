@@ -59,6 +59,7 @@ async function callClaude(body) {
 }
 
 const app = express();
+app.set('trust proxy', 1); // Railway 등 프록시 뒤에서 https/host 올바르게 인식(QR url용)
 app.use(express.json({ limit: '8mb' })); // base64 이미지 수용
 
 // 서버 능력 알림 (키 노출 없이 AI 가용 여부만)
