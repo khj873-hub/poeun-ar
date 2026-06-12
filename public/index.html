@@ -12,7 +12,7 @@
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;background:var(--ink);color:var(--paper)}
-  #app{position:relative;width:100vw;height:100dvh;overflow:hidden}
+  #app{position:relative;width:100%;max-width:480px;height:100dvh;margin:0 auto;overflow:hidden;box-shadow:0 0 60px rgba(0,0,0,.6)}
 
   /* AR / camera stage */
   #stage{position:absolute;inset:0;background:#0c0a08;overflow:hidden}
@@ -35,21 +35,21 @@
     width:34px;height:120px;background:linear-gradient(180deg,#4a443a,#2b2722);border-radius:6px 6px 0 0}
 
   /* the summoned character (표준영정 누끼) */
-  #figure{position:absolute;left:50%;bottom:42%;transform:translateX(-50%) translateY(20px);
+  #figure{position:absolute;left:50%;bottom:35%;transform:translateX(-50%) translateY(20px);
     width:210px;max-width:58vw;opacity:0;transition:opacity .8s ease,transform .8s cubic-bezier(.2,.8,.2,1);
     filter:drop-shadow(0 14px 22px rgba(0,0,0,.55));pointer-events:none;z-index:4}
   #figure img{width:100%;display:block}
   #figure.summoned{opacity:1;transform:translateX(-50%) translateY(0)}
   @keyframes float{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-9px)}}
   #figure.summoned.idle{animation:float 4.5s ease-in-out infinite}
-  .halo{position:absolute;left:50%;bottom:43%;transform:translate(-50%,0);
+  .halo{position:absolute;left:50%;bottom:34%;transform:translate(-50%,0);
     width:200px;height:200px;max-width:54vw;max-height:54vw;border-radius:50%;
     background:radial-gradient(circle,rgba(212,178,94,.28) 0%,rgba(212,178,94,0) 65%);
     opacity:0;transition:opacity .8s;z-index:3;pointer-events:none}
   .halo.show{opacity:1}
 
   /* speech bubble above figure */
-  #bubble{position:absolute;left:50%;bottom:calc(44% + 232px);transform:translateX(-50%) scale(.9);
+  #bubble{position:absolute;left:50%;bottom:calc(35% + 235px);transform:translateX(-50%) scale(.9);
     width:min(86vw,440px);background:var(--paper);color:var(--ink);
     border-radius:16px;padding:14px 16px;font-size:15px;line-height:1.6;
     box-shadow:0 14px 40px var(--shadow);opacity:0;transition:opacity .35s,transform .35s;
@@ -221,8 +221,8 @@
   @keyframes flash{0%{opacity:0}15%{opacity:.85}100%{opacity:0}}
 
   @media(max-height:680px){
-    #figure{width:150px;bottom:44%}
-    #bubble{bottom:calc(44% + 200px)}
+    #figure{width:150px;bottom:32%}
+    #bubble{bottom:calc(32% + 175px)}
     #log{max-height:18vh}
   }
 </style>
