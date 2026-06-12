@@ -1,0 +1,10 @@
+{
+  "name": "poeun-ar",
+  "version": "0.1.0",
+  "private": true,
+  "description": "정몽주 AR 역사탐방 — 용인 문화유산 WebAR 실증 MVP",
+  "scripts": {
+    "dev": "npx --yes serve -l 5173 .",
+    "dev:py": "python3 -m http.server 5173"
+  }
+}

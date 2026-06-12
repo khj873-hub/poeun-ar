@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>포은 정몽주 · AR 역사탐방</title>
+<style>
+  :root{
+    --ink:#1a1410; --paper:#f4ede0; --paper2:#e8dcc6;
+    --crimson:#7a2218; --crimson-l:#a8392c; --gold:#b08d3f; --gold-l:#d4b25e;
+    --jade:#2f5d50; --shadow:rgba(26,20,16,.5);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;background:var(--ink);color:var(--paper)}
+  #app{position:relative;width:100vw;height:100dvh;overflow:hidden}
+
+  /* AR / camera stage */
+  #stage{position:absolute;inset:0;background:#0c0a08;overflow:hidden}
+  #mindar-root{position:absolute;inset:0}
+  #mindar-root video,#mindar-root canvas{width:100%!important;height:100%!important;object-fit:cover!important}
+
+  /* fallback / demo backdrop when no camera */
+  #demoBg{position:absolute;inset:0;display:none;background:
+    radial-gradient(120% 90% at 50% 10%, #2a3530 0%, #161d1a 55%, #0c100e 100%);
+    overflow:hidden}
+  #demoBg.show{display:block}
+  #demoBg .ground{position:absolute;left:0;right:0;bottom:0;height:42%;
+    background:linear-gradient(180deg,#1c2420 0%,#0e1310 100%);
+    box-shadow:inset 0 2px 0 rgba(176,141,63,.15)}
+  #demoBg .tomb{position:absolute;left:50%;bottom:30%;transform:translateX(-50%);
+    width:130px;height:90px;border-radius:60px 60px 8px 8px;
+    background:linear-gradient(180deg,#3b4640 0%,#222a26 100%);
+    box-shadow:0 14px 30px rgba(0,0,0,.5)}
+  #demoBg .stele{position:absolute;left:50%;bottom:30%;transform:translateX(-50%);
+    width:34px;height:120px;background:linear-gradient(180deg,#4a443a,#2b2722);border-radius:6px 6px 0 0}
+
+  /* the summoned character (SVG) */
+  #figure{position:absolute;left:50%;bottom:28%;transform:translateX(-50%) translateY(20px);
+    width:200px;max-width:54vw;opacity:0;transition:opacity .8s ease,transform .8s cubic-bezier(.2,.8,.2,1);
+    filter:drop-shadow(0 18px 24px rgba(0,0,0,.55));pointer-events:none;z-index:4}
+  #figure.summoned{opacity:1;transform:translateX(-50%) translateY(0)}
+  @keyframes float{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-9px)}}
+  #figure.summoned.idle{animation:float 4.5s ease-in-out infinite}
+  .halo{position:absolute;left:50%;bottom:26%;transform:translate(-50%,0);
+    width:230px;height:230px;max-width:60vw;max-height:60vw;border-radius:50%;
+    background:radial-gradient(circle,rgba(212,178,94,.28) 0%,rgba(212,178,94,0) 65%);
+    opacity:0;transition:opacity .8s;z-index:3;pointer-events:none}
+  .halo.show{opacity:1}
+
+  /* speech bubble above figure */
+  #bubble{position:absolute;left:50%;bottom:calc(28% + 210px);transform:translateX(-50%) scale(.9);
+    width:min(86vw,440px);background:var(--paper);color:var(--ink);
+    border-radius:16px;padding:14px 16px;font-size:15px;line-height:1.6;
+    box-shadow:0 14px 40px var(--shadow);opacity:0;transition:opacity .35s,transform .35s;
+    z-index:6;pointer-events:none;border:2px solid var(--gold)}
+  #bubble.show{opacity:1;transform:translateX(-50%) scale(1)}
+  #bubble::after{content:"";position:absolute;left:50%;bottom:-11px;transform:translateX(-50%);
+    width:0;height:0;border:11px solid transparent;border-top-color:var(--paper);border-bottom:0}
+  #bubble .who{font-size:12px;color:var(--crimson);font-weight:700;letter-spacing:.04em;margin-bottom:3px}
+
+  /* top status bar */
+  #topbar{position:absolute;top:0;left:0;right:0;z-index:8;display:flex;align-items:center;gap:10px;
+    padding:calc(env(safe-area-inset-top) + 10px) 14px 10px;
+    background:linear-gradient(180deg,rgba(12,10,8,.85),rgba(12,10,8,0))}
+  #seal{width:40px;height:40px;border-radius:8px;flex:none;background:var(--crimson);
+    display:flex;align-items:center;justify-content:center;border:1.5px solid var(--gold-l);
+    font-size:20px;font-weight:800;color:var(--gold-l);font-family:serif}
+  #titlewrap h1{font-size:16px;font-weight:700;letter-spacing:.02em}
+  #titlewrap p{font-size:11px;color:var(--gold-l);margin-top:1px}
+  #status{margin-left:auto;font-size:11px;padding:5px 10px;border-radius:20px;
+    background:rgba(244,237,224,.12);border:1px solid rgba(212,178,94,.4);white-space:nowrap}
+  #status.live{background:rgba(47,93,80,.35);border-color:var(--jade)}
+  #status .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--gold-l);margin-right:5px;vertical-align:middle}
+  #status.live .dot{background:#5fd39e;animation:pulse 1.4s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+  /* scan hint */
+  #scanHint{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:5;
+    text-align:center;width:min(78vw,320px);transition:opacity .4s}
+  #scanHint.hide{opacity:0;pointer-events:none}
+  #scanFrame{width:180px;height:180px;margin:0 auto 16px;border-radius:18px;position:relative}
+  #scanFrame span{position:absolute;width:34px;height:34px;border:3px solid var(--gold-l)}
+  #scanFrame span:nth-child(1){top:0;left:0;border-right:0;border-bottom:0;border-radius:14px 0 0 0}
+  #scanFrame span:nth-child(2){top:0;right:0;border-left:0;border-bottom:0;border-radius:0 14px 0 0}
+  #scanFrame span:nth-child(3){bottom:0;left:0;border-right:0;border-top:0;border-radius:0 0 0 14px}
+  #scanFrame span:nth-child(4){bottom:0;right:0;border-left:0;border-top:0;border-radius:0 0 14px 0}
+  #scanFrame::before{content:"";position:absolute;left:8%;right:8%;height:2px;top:0;
+    background:linear-gradient(90deg,transparent,var(--gold-l),transparent);
+    animation:scanline 2.4s ease-in-out infinite}
+  @keyframes scanline{0%{top:6%;opacity:0}10%{opacity:1}90%{opacity:1}100%{top:94%;opacity:0}}
+  #scanHint h2{font-size:17px;margin-bottom:6px}
+  #scanHint p{font-size:13px;color:var(--paper2);line-height:1.6}
+
+  /* bottom chat panel */
+  #chat{position:absolute;left:0;right:0;bottom:0;z-index:7;
+    background:linear-gradient(180deg,rgba(12,10,8,0),rgba(12,10,8,.92) 18%);
+    padding:30px 12px calc(env(safe-area-inset-bottom) + 12px);
+    transform:translateY(0);transition:transform .4s}
+  #log{max-height:30vh;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:10px;padding:0 2px;scrollbar-width:thin}
+  .msg{max-width:82%;padding:9px 13px;border-radius:14px;font-size:14px;line-height:1.5;word-break:break-word}
+  .msg.me{align-self:flex-end;background:var(--jade);color:#eaf6f0;border-bottom-right-radius:4px}
+  .msg.po{align-self:flex-start;background:var(--paper);color:var(--ink);border-bottom-left-radius:4px}
+  .msg .nick{font-size:11px;opacity:.7;margin-bottom:2px;display:block}
+  .msg.sys{align-self:center;background:rgba(244,237,224,.1);color:var(--gold-l);font-size:12px;text-align:center;max-width:90%}
+  .msg.typing{align-self:flex-start;background:var(--paper);color:var(--ink)}
+  .msg.typing .d{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--crimson);margin:0 1px;animation:blink 1.2s infinite}
+  .msg.typing .d:nth-child(2){animation-delay:.2s}
+  .msg.typing .d:nth-child(3){animation-delay:.4s}
+  @keyframes blink{0%,60%,100%{opacity:.25}30%{opacity:1}}
+  #inputrow{display:flex;gap:8px;align-items:flex-end}
+  #q{flex:1;background:var(--paper);color:var(--ink);border:0;border-radius:22px;
+    padding:12px 16px;font-size:15px;resize:none;max-height:90px;line-height:1.4;font-family:inherit}
+  #q:focus{outline:2px solid var(--gold)}
+  #send{flex:none;width:46px;height:46px;border-radius:50%;border:0;background:var(--crimson);
+    color:var(--gold-l);font-size:20px;cursor:pointer;transition:transform .15s,background .15s}
+  #send:active{transform:scale(.9)}
+  #send:disabled{opacity:.4;cursor:default}
+
+  /* quick scenario chips */
+  #chips{display:flex;gap:7px;overflow-x:auto;padding:0 2px 10px;scrollbar-width:none}
+  #chips::-webkit-scrollbar{display:none}
+  .chip{flex:none;background:rgba(244,237,224,.12);border:1px solid rgba(212,178,94,.4);
+    color:var(--paper);font-size:12.5px;padding:7px 13px;border-radius:18px;cursor:pointer;white-space:nowrap}
+  .chip:active{background:rgba(212,178,94,.25)}
+
+  /* start overlay */
+  #intro{position:absolute;inset:0;z-index:20;background:
+    radial-gradient(130% 100% at 50% 0%, #241a14 0%, #14100c 60%, #0b0907 100%);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px;text-align:center}
+  #intro .crest{width:84px;height:84px;border-radius:16px;background:var(--crimson);
+    display:flex;align-items:center;justify-content:center;font-family:serif;font-size:44px;
+    color:var(--gold-l);border:2px solid var(--gold);margin-bottom:22px;box-shadow:0 10px 40px rgba(122,34,24,.5)}
+  #intro h1{font-size:24px;letter-spacing:.04em;margin-bottom:8px}
+  #intro .sub{color:var(--gold-l);font-size:14px;margin-bottom:4px;letter-spacing:.1em}
+  #intro .desc{color:var(--paper2);font-size:13.5px;line-height:1.7;max-width:330px;margin:14px 0 28px}
+  #intro .room{font-size:12px;color:var(--paper2);background:rgba(244,237,224,.08);
+    padding:8px 14px;border-radius:20px;margin-bottom:24px;border:1px solid rgba(212,178,94,.25)}
+  .btn{background:var(--gold);color:var(--ink);border:0;border-radius:26px;padding:15px 30px;
+    font-size:16px;font-weight:700;cursor:pointer;width:100%;max-width:300px;transition:transform .15s}
+  .btn:active{transform:scale(.97)}
+  .btn.ghost{background:transparent;color:var(--gold-l);border:1.5px solid var(--gold);margin-top:10px;font-weight:500;font-size:14px}
+  #intro .note{margin-top:18px;font-size:11px;color:#7a6f5e;max-width:300px;line-height:1.6}
+
+  /* API key sheet */
+  #keysheet{position:absolute;inset:0;z-index:25;background:rgba(11,9,7,.96);
+    display:none;flex-direction:column;align-items:center;justify-content:center;padding:28px;text-align:center}
+  #keysheet.show{display:flex}
+  #keysheet h3{font-size:18px;margin-bottom:8px}
+  #keysheet p{font-size:13px;color:var(--paper2);line-height:1.6;max-width:330px;margin-bottom:18px}
+  #keysheet input{width:100%;max-width:330px;background:var(--paper);color:var(--ink);border:0;
+    border-radius:12px;padding:13px 15px;font-size:14px;margin-bottom:14px}
+  #keysheet .note{font-size:11px;color:#7a6f5e;margin-top:14px;max-width:320px;line-height:1.6}
+
+  /* location gate */
+  #geogate{position:absolute;inset:0;z-index:24;background:
+    radial-gradient(130% 100% at 50% 0%, #1a2420 0%, #11100c 60%, #0b0907 100%);
+    display:none;flex-direction:column;align-items:center;justify-content:center;padding:30px;text-align:center}
+  #geogate.show{display:flex}
+  .geo-ico{font-size:54px;margin-bottom:18px;animation:geopulse 1.8s ease-in-out infinite}
+  @keyframes geopulse{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.12);opacity:1}}
+  #geogate.ok .geo-ico{animation:none}
+  #geogate h3{font-size:20px;margin-bottom:10px}
+  #geogate p{font-size:13.5px;color:var(--paper2);line-height:1.7;max-width:330px;margin-bottom:14px}
+  #geoDist{font-size:13px;color:var(--gold-l);background:rgba(244,237,224,.08);
+    padding:8px 16px;border-radius:20px;margin-bottom:20px;min-height:0;border:1px solid rgba(212,178,94,.25);display:none}
+  #geoDist.show{display:block}
+  #geogate.fail{background:radial-gradient(130% 100% at 50% 0%, #2a1714 0%, #14100c 60%, #0b0907 100%)}
+  #geogate.fail .geo-ico{animation:none}
+  #geogate .btn{max-width:300px}
+  #geogate .note{margin-top:18px;font-size:11px;color:#7a6f5e;max-width:300px;line-height:1.6}
+
+  @media(max-height:680px){
+    #figure{width:160px;bottom:30%}
+    #bubble{bottom:calc(30% + 168px)}
+    #log{max-height:24vh}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- AR stage -->
+  <div id="stage">
+    <div id="mindar-root"></div>
+    <div id="demoBg">
+      <div class="ground"></div>
+      <div class="stele"></div>
+      <div class="tomb"></div>
+    </div>
+    <div class="halo" id="halo"></div>
+    <div id="figure"></div>
+    <div id="bubble"><div class="who">포은 정몽주</div><div id="bubbleText"></div></div>
+
+    <div id="scanHint">
+      <div id="scanFrame"><span></span><span></span><span></span><span></span></div>
+      <h2>안내판을 비춰 보세요</h2>
+      <p>카메라로 정몽주 묘 안내판을 비추면<br>포은 선생이 그 앞에 나타납니다</p>
+    </div>
+  </div>
+
+  <!-- top bar -->
+  <div id="topbar">
+    <div id="seal">圃</div>
+    <div id="titlewrap">
+      <h1>포은 정몽주</h1>
+      <p>1392 · 선죽교의 충신</p>
+    </div>
+    <div id="status"><span class="dot"></span><span id="statusText">대기 중</span></div>
+  </div>
+
+  <!-- bottom chat -->
+  <div id="chat">
+    <div id="chips">
+      <div class="chip" data-q="왜 이성계 편에 서지 않으셨나요?">왜 이성계 편에 안 서셨어요?</div>
+      <div class="chip" data-q="단심가는 어떤 마음으로 지으셨나요?">단심가 이야기</div>
+      <div class="chip" data-q="선죽교에서 무슨 일이 있었나요?">선죽교에서 무슨 일이</div>
+      <div class="chip" data-q="왜 선생님 묘가 용인에 있나요?">묘가 왜 용인에?</div>
+      <div class="chip" data-q="후손들에게 한 말씀 해주세요.">후손에게 한 말씀</div>
+    </div>
+    <div id="log"></div>
+    <div id="inputrow">
+      <textarea id="q" rows="1" placeholder="포은 선생께 여쭤보세요…"></textarea>
+      <button id="send" aria-label="질문 보내기">➤</button>
+    </div>
+  </div>
+
+  <!-- intro overlay -->
+  <div id="intro">
+    <div class="crest">圃</div>
+    <div class="sub">AR 역사탐방</div>
+    <h1>포은 정몽주를 만나다</h1>
+    <div class="desc">정몽주 묘 안내판을 카메라로 비추면<br>포은 선생이 눈앞에 나타나 대화합니다.<br>고려의 마지막 충신에게 직접 물어보세요.</div>
+    <div class="room">📍 용인 정몽주 묘 현장 전용 · 1인 체험</div>
+    <button class="btn" id="startAR">현장 확인 후 시작하기</button>
+    <button class="btn ghost" id="startDemo">미리보기 (현장 검증 생략)</button>
+    <div class="note">이 체험은 정몽주 묘 현장에서만 작동합니다. 위치 확인과 카메라 권한을 허용해 주세요.</div>
+  </div>
+
+  <!-- location gate -->
+  <div id="geogate">
+    <div class="geo-ico" id="geoIco">📍</div>
+    <h3 id="geoTitle">현장 위치 확인 중</h3>
+    <p id="geoDesc">정몽주 묘 현장에 있는지 확인하고 있습니다. 위치 권한을 허용해 주세요.</p>
+    <div id="geoDist"></div>
+    <button class="btn" id="geoRetry" style="display:none">다시 확인</button>
+    <button class="btn ghost" id="geoBypass" style="display:none">미리보기로 둘러보기</button>
+    <div class="note" id="geoNote">실제 배포 시 묘 좌표·허용 반경은 운영 설정에서 지정합니다. 현재는 테스트 좌표가 들어 있습니다.</div>
+  </div>
+
+  <!-- api key sheet -->
+  <div id="keysheet">
+    <h3>대화 기능 연결</h3>
+    <p>정몽주와 실제로 대화하려면 Anthropic API 키가 필요합니다. 키는 이 기기에만 저장되며 서버로 전송되지 않습니다.</p>
+    <input id="apikey" type="password" placeholder="sk-ant-api03-..." autocomplete="off">
+    <button class="btn" id="saveKey">연결하기</button>
+    <button class="btn ghost" id="skipKey">데모 응답으로 체험 (키 없이)</button>
+    <div class="note">실제 현장 배포 시에는 키를 백엔드 서버에 두고 학생 기기에는 노출하지 않습니다. 이 화면은 프로토타입 전용입니다.</div>
+  </div>
+
+</div>
+
+<script type="module">
+const $ = s => document.querySelector(s);
+const figure = $('#figure'), halo = $('#halo'), bubble = $('#bubble'), bubbleText = $('#bubbleText');
+const statusEl = $('#status'), statusText = $('#statusText'), scanHint = $('#scanHint');
+const log = $('#log'), qEl = $('#q'), sendBtn = $('#send'), demoBg = $('#demoBg');
+
+let apiKey = null, demoMode = false, summoned = false, busy = false;
+const history = [];
+
+/* ---------- 정몽주 캐릭터 (저작권 안전: 직접 그린 SVG) ---------- */
+figure.innerHTML = `
+<svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg" aria-label="정몽주 캐릭터">
+  <ellipse cx="100" cy="288" rx="60" ry="10" fill="rgba(0,0,0,.35)"/>
+  <!-- robe -->
+  <path d="M58 150 Q60 130 80 124 L120 124 Q140 130 142 150 L156 280 Q100 292 44 280 Z" fill="#2f5d50"/>
+  <path d="M58 150 Q60 130 80 124 L100 124 L100 284 Q70 284 44 280 Z" fill="#356a5b"/>
+  <!-- center band -->
+  <path d="M92 126 L108 126 L112 284 Q100 287 88 284 Z" fill="#7a2218"/>
+  <path d="M96 150 L104 150 L104 270 L96 270 Z" fill="#b08d3f" opacity=".5"/>
+  <!-- sleeves -->
+  <path d="M58 152 Q34 168 38 210 Q54 206 62 188 Z" fill="#356a5b"/>
+  <path d="M142 152 Q166 168 162 210 Q146 206 138 188 Z" fill="#356a5b"/>
+  <!-- collar -->
+  <path d="M80 124 L100 140 L120 124 L116 150 L100 156 L84 150 Z" fill="#f4ede0"/>
+  <!-- neck -->
+  <rect x="92" y="108" width="16" height="22" rx="6" fill="#e6b98f"/>
+  <!-- head -->
+  <ellipse cx="100" cy="88" rx="30" ry="33" fill="#f0c89e"/>
+  <!-- beard -->
+  <path d="M74 96 Q78 128 100 138 Q122 128 126 96 Q116 112 100 112 Q84 112 74 96 Z" fill="#efe9e0"/>
+  <path d="M88 112 Q100 150 112 112 Q100 126 88 112Z" fill="#e4ddd2"/>
+  <!-- mustache -->
+  <path d="M84 92 Q92 98 100 95 Q108 98 116 92 Q108 102 100 100 Q92 102 84 92Z" fill="#d9d2c6"/>
+  <!-- eyes -->
+  <path d="M82 82 Q88 78 94 82" stroke="#3a2a1a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M106 82 Q112 78 118 82" stroke="#3a2a1a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <!-- brows -->
+  <path d="M80 72 Q88 68 96 72" stroke="#5a4632" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M104 72 Q112 68 120 72" stroke="#5a4632" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <!-- gat (hat) -->
+  <ellipse cx="100" cy="58" rx="46" ry="11" fill="#1a1410"/>
+  <ellipse cx="100" cy="56" rx="46" ry="9" fill="#2a2018"/>
+  <path d="M78 56 Q80 30 100 28 Q120 30 122 56 Z" fill="#1a1410"/>
+  <ellipse cx="100" cy="30" rx="22" ry="6" fill="#241a14"/>
+  <path d="M78 56 Q80 30 100 28 Q120 30 122 56" fill="none" stroke="#3a2a1a" stroke-width="1" opacity=".6"/>
+</svg>`;
+
+/* ---------- intro flow ---------- */
+$('#startAR').onclick = () => { $('#intro').style.display='none'; runGeoGate(()=>askKeyThen(initAR)); };
+$('#startDemo').onclick = () => { $('#intro').style.display='none'; demoBg.classList.add('show'); demoMode=true; askKeyThen(initDemoStage); };
+
+/* ---------- geofence config ---------- */
+const SITE = {
+  name: '정몽주 묘',
+  lat: 37.31866,   // 용인 정몽주선생묘 근처 테스트 좌표
+  lng: 127.21931,
+  radiusM: 150,    // 허용 반경(미터)
+};
+const SESSION_MIN = 20;   // 세션 유효 시간(분)
+let geoWatchId = null, sessionTimer = null, sessionEndsAt = 0;
+
+const geogate = $('#geogate');
+function gtext(title, desc){ $('#geoTitle').textContent=title; $('#geoDesc').textContent=desc; }
+
+function haversine(aLat,aLng,bLat,bLng){
+  const R=6371000, toR=x=>x*Math.PI/180;
+  const dLat=toR(bLat-aLat), dLng=toR(bLng-aLng);
+  const s=Math.sin(dLat/2)**2 + Math.cos(toR(aLat))*Math.cos(toR(bLat))*Math.sin(dLng/2)**2;
+  return 2*R*Math.asin(Math.sqrt(s));
+}
+
+function runGeoGate(onPass){
+  geogate.className='show'; $('#geoIco').textContent='📍';
+  gtext('현장 위치 확인 중', '정몽주 묘 현장에 있는지 확인하고 있습니다. 위치 권한을 허용해 주세요.');
+  $('#geoDist').classList.remove('show'); $('#geoRetry').style.display='none'; $('#geoBypass').style.display='none';
+
+  if(!('geolocation' in navigator)){ geoFail('이 기기는 위치 확인을 지원하지 않습니다.'); return; }
+
+  navigator.geolocation.getCurrentPosition(pos=>{
+    const d = haversine(pos.coords.latitude,pos.coords.longitude,SITE.lat,SITE.lng);
+    const dTxt = d>1000 ? (d/1000).toFixed(1)+'km' : Math.round(d)+'m';
+    $('#geoDist').textContent = `현장까지 약 ${dTxt} · 허용 반경 ${SITE.radiusM}m`;
+    $('#geoDist').classList.add('show');
+
+    if(d <= SITE.radiusM){
+      geogate.classList.add('ok'); $('#geoIco').textContent='✅';
+      gtext('현장 확인 완료', `${SITE.name} 현장입니다. 포은 선생을 만나러 가볼까요?`);
+      startSession();
+      setTimeout(()=>{ geogate.classList.remove('show'); onPass(); }, 1100);
+    }else{
+      geoFail(`${SITE.name} 반경 ${SITE.radiusM}m 안에서만 체험할 수 있습니다. 현장에서 다시 시도해 주세요.`);
+    }
+  }, err=>{
+    geoFail(err.code===1 ? '위치 권한이 거부되었습니다. 체험하려면 위치 허용이 필요합니다.' : '위치를 확인할 수 없습니다. 신호가 약하면 잠시 후 다시 시도해 주세요.');
+  }, { enableHighAccuracy:true, timeout:10000, maximumAge:0 });
+}
+
+function geoFail(msg){
+  geogate.className='show fail'; geogate.classList.remove('ok');
+  $('#geoIco').textContent='🚫';
+  gtext('현장에서만 이용할 수 있어요', msg);
+  $('#geoRetry').style.display=''; $('#geoBypass').style.display='';
+}
+$('#geoRetry').onclick = ()=> runGeoGate(()=>askKeyThen(initAR));
+$('#geoBypass').onclick = ()=>{ geogate.classList.remove('show'); demoBg.classList.add('show'); demoMode=true; askKeyThen(initDemoStage); };
+
+/* ---------- session lifetime + leave detection ---------- */
+function startSession(){
+  sessionEndsAt = Date.now() + SESSION_MIN*60*1000;
+  clearTimeout(sessionTimer);
+  sessionTimer = setTimeout(endSession, SESSION_MIN*60*1000);
+  tickClock();
+  // continuous geofence watch: lock if user walks away
+  if(geoWatchId!=null) navigator.geolocation.clearWatch(geoWatchId);
+  geoWatchId = navigator.geolocation.watchPosition(pos=>{
+    const d = haversine(pos.coords.latitude,pos.coords.longitude,SITE.lat,SITE.lng);
+    if(d > SITE.radiusM + 60){ lockOut(); }  // 60m 버퍼
+  }, ()=>{}, { enableHighAccuracy:true, maximumAge:5000 });
+}
+function endSession(){ lockOut('체험 시간이 끝났습니다', `${SESSION_MIN}분 체험이 종료되었어요. 다시 만나려면 현장에서 QR을 새로 인식해 주세요.`); }
+
+let clockTimer=null;
+function tickClock(){
+  clearInterval(clockTimer);
+  clockTimer = setInterval(()=>{
+    const left = Math.max(0, sessionEndsAt - Date.now());
+    if(left<=0){ clearInterval(clockTimer); return; }
+    const m = Math.floor(left/60000), s = Math.floor((left%60000)/1000);
+    statusText.textContent = `현장 세션 ${m}:${String(s).padStart(2,'0')}`;
+    statusEl.classList.add('live');
+  }, 1000);
+}
+function lockOut(title='현장을 벗어났습니다', desc='정몽주 묘 현장을 벗어나 체험이 잠겼습니다. 현장으로 돌아오면 다시 이용할 수 있어요.'){
+  if(geoWatchId!=null){ navigator.geolocation.clearWatch(geoWatchId); geoWatchId=null; }
+  clearTimeout(sessionTimer); clearInterval(clockTimer);
+  try{ speechSynthesis.cancel(); }catch(e){}
+  geogate.className='show fail'; geogate.classList.remove('ok');
+  $('#geoIco').textContent='🔒';
+  gtext(title, desc);
+  $('#geoDist').classList.remove('show'); $('#geoRetry').style.display=''; $('#geoBypass').style.display='none';
+  busy = true; sendBtn.disabled = true;
+}
+
+function askKeyThen(next){
+  const saved = sessionStorage.getItem('anthropic_key');
+  if(saved){ apiKey = saved; next(); return; }
+  $('#keysheet').classList.add('show');
+  window.__afterKey = next;
+}
+$('#saveKey').onclick = () => {
+  const v = $('#apikey').value.trim();
+  if(v){ apiKey = v; sessionStorage.setItem('anthropic_key', v); }
+  $('#keysheet').classList.remove('show');
+  window.__afterKey && window.__afterKey();
+};
+$('#skipKey').onclick = () => {
+  demoMode = true;
+  $('#keysheet').classList.remove('show');
+  window.__afterKey && window.__afterKey();
+};
+
+/* ---------- demo stage (no camera) ---------- */
+function initDemoStage(){
+  scanHint.classList.add('hide');
+  setStatus('체험 모드', true);
+  setTimeout(summon, 600);
+  sys('미리보기 모드입니다. 실제 현장에서는 카메라로 안내판을 비추면 같은 장면이 나타납니다.');
+  greet();
+}
+
+/* ---------- real AR ---------- */
+async function initAR(){
+  setStatus('카메라 여는 중…');
+  try{
+    const { MindARThree } = await import('https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js');
+    const THREE = await import('https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js');
+
+    const mindarThree = new MindARThree({
+      container: $('#mindar-root'),
+      imageTargetSrc: 'https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/examples/image-tracking/assets/card-example/card.mind',
+      uiScanning: false, uiLoading: false, uiError: false,
+    });
+    const { renderer, scene, camera } = mindarThree;
+    const anchor = mindarThree.addAnchor(0);
+
+    anchor.onTargetFound = () => { scanHint.classList.add('hide'); setStatus('포은 등장', true); summon(); if(!history.length) greet(); };
+    anchor.onTargetLost  = () => { setStatus('타겟 탐색 중…', false); };
+
+    await mindarThree.start();
+    renderer.setAnimationLoop(()=>renderer.render(scene, camera));
+    setStatus('안내판 탐색 중…');
+  }catch(err){
+    console.error(err);
+    // graceful fallback: keep camera stream attempt, else demo backdrop
+    sys('이 기기·브라우저에서 카메라 AR 인식이 제한됩니다. 미리보기 모드로 전환합니다.');
+    demoBg.classList.add('show');
+    initDemoStage();
+  }
+}
+
+/* ---------- summon character ---------- */
+function summon(){
+  if(summoned) return; summoned = true;
+  halo.classList.add('show');
+  figure.classList.add('summoned');
+  setTimeout(()=>figure.classList.add('idle'), 850);
+}
+
+function setStatus(t, live=false){
+  if(clockTimer && live){ return; } // 세션 카운트다운이 우선
+  statusText.textContent = t;
+  statusEl.classList.toggle('live', live);
+}
+
+/* ---------- chat ---------- */
+function addMsg(text, who, nick){
+  const d = document.createElement('div');
+  d.className = 'msg '+who;
+  if(nick){ const n=document.createElement('span'); n.className='nick'; n.textContent=nick; d.appendChild(n); }
+  d.appendChild(document.createTextNode(text));
+  log.appendChild(d); log.scrollTop = log.scrollHeight;
+  return d;
+}
+function sys(t){ addMsg(t,'sys'); }
+
+function showBubble(t){
+  bubbleText.textContent = t.length>90 ? t.slice(0,88)+'…' : t;
+  bubble.classList.add('show');
+  clearTimeout(showBubble._t);
+  showBubble._t = setTimeout(()=>bubble.classList.remove('show'), 5200);
+}
+
+function greet(){
+  const g = '내 비록 한 줌 흙이 되었으나, 이 나라를 생각하는 마음은 변치 않았네. 무엇이 궁금한가, 젊은 벗이여.';
+  setTimeout(()=>{ addMsg(g,'po','포은 정몽주'); showBubble(g); speak(g); }, 700);
+  history.push({role:'assistant', content:g});
+}
+
+const SYSTEM_PROMPT = `당신은 고려 말의 충신이자 성리학자인 포은 정몽주(1337~1392)입니다. 초등학생들과 현장 체험 학습에서 대화하고 있습니다.
+
+[인물 설정]
+- 고려 마지막을 지킨 충신. 이성계 일파가 새 왕조를 세우려 할 때 끝까지 고려 왕실을 지키려다 1392년 개성 선죽교에서 이방원이 보낸 자객에게 죽임을 당했습니다.
+- '단심가'(이 몸이 죽고 죽어 일백 번 고쳐 죽어…)로 변치 않는 충절을 노래했습니다.
+- 성리학의 기초를 닦고, 오부학당·향교를 세워 교육을 진흥했으며, 일본에 사신으로 다녀오기도 했습니다.
+- 묘는 본래 개성에 있었으나 고향 영천으로 이장하던 중, 행렬이 용인 수지에 이르렀을 때 명정(깃발)이 바람에 날아가 떨어진 자리에 모셨다는 이야기가 전합니다. 그래서 묘가 용인에 있습니다. (경기도 기념물 제1호)
+
+[말투]
+- 점잖고 따뜻한 선비의 어조. 1인칭으로 '나'. 학생을 '젊은 벗', '아이야' 등으로 부름.
+- 2~4문장으로 짧고 쉽게. 초등학생이 이해할 수준의 단어.
+- 사실에 근거하되, 모르거나 사후의 일은 "내가 살던 시대 이후의 일은 알지 못하나…"로 정직하게.
+- 폭력·죽음은 담담하고 교육적으로. 무섭지 않게.
+- 매 답변 끝에 학생의 호기심을 끌 짧은 한마디나 되물음을 더해도 좋습니다.`;
+
+async function ask(text){
+  if(busy || !text.trim()) return;
+  busy = true; sendBtn.disabled = true;
+  addMsg(text,'me','나');
+  history.push({role:'user', content:text});
+
+  const typing = addMsg('','po','포은 정몽주');
+  typing.classList.add('typing');
+  typing.innerHTML = '<span class="nick">포은 정몽주</span><span class="d"></span><span class="d"></span><span class="d"></span>';
+
+  let reply='';
+  try{
+    if(demoMode || !apiKey){
+      await new Promise(r=>setTimeout(r,900));
+      reply = demoReply(text);
+    }else{
+      reply = await callClaude();
+    }
+  }catch(e){
+    console.error(e);
+    reply = '허허, 잠시 정신이 아득하구나. 다시 한 번 물어봐 주겠는가?';
+  }
+  typing.remove();
+  addMsg(reply,'po','포은 정몽주');
+  showBubble(reply); speak(reply);
+  history.push({role:'assistant', content:reply});
+  busy=false; sendBtn.disabled=false;
+}
+
+async function callClaude(){
+  const res = await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({
+      model:'claude-sonnet-4-20250514', max_tokens:300,
+      system:SYSTEM_PROMPT,
+      messages:history.slice(-10)
+    })
+  });
+  const data = await res.json();
+  if(data.error) throw new Error(data.error.message);
+  return data.content.filter(c=>c.type==='text').map(c=>c.text).join('').trim();
+}
+
+function demoReply(q){
+  const m = [
+    [/이성계|편|왜.*안|역성|혁명/, '새 나라를 세우면 더 편했겠지. 허나 내 평생 섬긴 고려를 어찌 등지겠는가. 신하 된 자의 마음은 둘이 될 수 없는 법이라네.'],
+    [/단심가|마음|충절|일백/, '"이 몸이 죽고 죽어 일백 번 고쳐 죽어도…" 임을 향한 마음 변치 않으리라는 노래였네. 너희도 소중히 여기는 것이 있다면 그 마음을 지켜보아라.'],
+    [/선죽교|죽|자객|방원/, '개성의 선죽교에서 이방원의 사람들에게 변을 당했네. 허나 두렵지 않았다. 옳다고 믿는 길 위에서 맞은 끝이었으니.'],
+    [/용인|묘|왜.*여기|이장/, '본래 개성에 묻혔으나 고향으로 옮기던 길, 용인 땅에서 깃발이 바람에 날아가 떨어진 자리에 나를 모셨다 하네. 그리하여 너희가 선 이곳에 내가 있구나.'],
+    [/후손|후예|한 말씀|당부/, '뜻을 세웠거든 작은 이로움에 흔들리지 말거라. 사람의 값어치는 끝까지 지킨 마음에서 드러나는 법이니라.'],
+  ];
+  for(const [re,a] of m){ if(re.test(q)) return a; }
+  return '좋은 물음이로다. 허나 내가 살던 고려의 일이라면 더 자세히 일러줄 수 있으니, 그 시절 이야기를 물어봐 주겠는가?';
+}
+
+/* ---------- TTS ---------- */
+let voice=null;
+function pickVoice(){
+  const vs = speechSynthesis.getVoices();
+  voice = vs.find(v=>v.lang==='ko-KR') || vs.find(v=>v.lang&&v.lang.startsWith('ko')) || null;
+}
+if('speechSynthesis' in window){ pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+function speak(t){
+  if(!('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(t.replace(/[""'']/g,''));
+  u.lang='ko-KR'; u.rate=.88; u.pitch=.85; if(voice) u.voice=voice;
+  speechSynthesis.speak(u);
+}
+
+/* ---------- input wiring ---------- */
+sendBtn.onclick = ()=>{ const v=qEl.value.trim(); if(v){ ask(v); qEl.value=''; qEl.style.height='auto'; } };
+qEl.addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendBtn.onclick(); } });
+qEl.addEventListener('input', ()=>{ qEl.style.height='auto'; qEl.style.height=Math.min(qEl.scrollHeight,90)+'px'; });
+document.querySelectorAll('.chip').forEach(c=> c.onclick=()=>{ if(!busy) ask(c.dataset.q); });
+</script>
+</body>
+</html>
