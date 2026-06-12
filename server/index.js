@@ -3,6 +3,7 @@
 import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { load as loadStore, logEvent, getStats } from './store.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
@@ -109,6 +110,15 @@ app.post('/api/vision', async (req, res) => {
     res.json({ text });
   } catch (e) { console.error('vision', e.message); res.status(502).json({ error: '판정 연결 실패' }); }
 });
+
+// P4: 실증 데이터 로그 (익명 세션ID만 — PII 저장 금지)
+loadStore();
+app.post('/api/log', (req, res) => {
+  const { sid, event, data } = req.body || {};
+  try { logEvent(sid, event, data || {}); res.json({ ok: true }); }
+  catch (e) { res.status(400).json({ error: e.message }); }
+});
+app.get('/api/stats', (req, res) => res.json(getStats()));
 
 // 정적 프론트는 public/ 만 서빙 (server/·.env·docs 노출 차단)
 app.use(express.static(path.join(ROOT, 'public'), { index: 'index.html' }));
