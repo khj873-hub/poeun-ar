@@ -408,8 +408,14 @@ figure.innerHTML = `
   <path d="M138 150 Q170 172 166 230 Q146 224 134 196 Z" fill="#374751"/>
   <!-- 각대(허리띠) -->
   <path d="M48 196 Q100 206 152 196 L152 206 Q100 216 48 206 Z" fill="#2c3942"/>
-  <!-- 공수 자세(맞잡은 손, 소매 속) -->
-  <path d="M72 208 Q62 240 84 258 Q100 266 116 258 Q138 240 128 208 Q100 224 72 208 Z" fill="#33424b"/>
+  <!-- 공수 자세(소매) -->
+  <path d="M72 212 Q62 242 84 260 Q100 268 116 260 Q138 242 128 212 Q100 228 72 212 Z" fill="#33424b"/>
+  <!-- 맞잡은 두 손(공수) — 소매 위로 드러남 -->
+  <ellipse cx="100" cy="224" rx="18" ry="11.5" fill="#e6bd92"/>
+  <path d="M100 214 L100 235" stroke="#cf9c6b" stroke-width="1.4" stroke-linecap="round"/>
+  <path d="M85 221 Q92 224 99 223" stroke="#cf9c6b" stroke-width="1" fill="none" stroke-linecap="round"/>
+  <path d="M101 223 Q108 224 115 221" stroke="#cf9c6b" stroke-width="1" fill="none" stroke-linecap="round"/>
+  <path d="M82 229 Q100 234 118 229" stroke="#d2a06f" stroke-width="1.2" fill="none" stroke-linecap="round" opacity=".6"/>
 
   <!-- 둥근 깃(단령) + 흰 동정 -->
   <path d="M76 132 Q100 160 124 132 L120 123 Q100 118 80 123 Z" fill="#32414a"/>
@@ -873,18 +879,22 @@ function finishQuest(){
   setTimeout(promptRating, 1800); // 완료 후 만족도 평가
 }
 
-/* ---------- TTS ---------- */
+/* ---------- TTS (남성 목소리 우선) ---------- */
 let voice=null;
 function pickVoice(){
-  const vs = speechSynthesis.getVoices();
-  voice = vs.find(v=>v.lang==='ko-KR') || vs.find(v=>v.lang&&v.lang.startsWith('ko')) || null;
+  const ko = speechSynthesis.getVoices().filter(v=>v.lang && v.lang.toLowerCase().startsWith('ko'));
+  const male = /injoon|injun|suhyun|gyeong|minsoo|minjun|jihoon|namja|남성|남자|male/i;   // 알려진 남성 보이스
+  const female = /yuna|sunhi|heami|sora|female|여성|여자/i;                                  // 알려진 여성 보이스
+  voice = ko.find(v=>male.test(v.name))      // 1) 남성 이름 보이스
+       || ko.find(v=>!female.test(v.name))   // 2) 여성으로 알려지지 않은 보이스
+       || ko[0] || null;                     // 3) 그래도 없으면 한국어 첫 보이스(피치로 보정)
 }
 if('speechSynthesis' in window){ pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
 function speak(t){
   if(!('speechSynthesis' in window)) return;
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(t.replace(/[""'']/g,''));
-  u.lang='ko-KR'; u.rate=.88; u.pitch=.85; if(voice) u.voice=voice;
+  u.lang='ko-KR'; u.rate=.9; u.pitch=.62; if(voice) u.voice=voice;   // 낮은 피치로 중후한 남성 톤
   speechSynthesis.speak(u);
 }
 
