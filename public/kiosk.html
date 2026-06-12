@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>포은 정몽주 AR · 입장 QR (현장 키오스크)</title>
+<style>
+  :root{ --ink:#1a1410; --paper:#f4ede0; --crimson:#7a2218; --gold:#b08d3f; --gold-l:#d4b25e; }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+    background:radial-gradient(130% 100% at 50% 0%,#241a14 0%,#14100c 60%,#0b0907 100%);color:var(--paper)}
+  #wrap{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center}
+  .crest{width:64px;height:64px;border-radius:14px;background:var(--crimson);display:flex;align-items:center;justify-content:center;
+    font-family:serif;font-size:34px;color:var(--gold-l);border:2px solid var(--gold);margin-bottom:16px}
+  h1{font-size:22px;letter-spacing:.03em;margin-bottom:6px}
+  .sub{color:var(--gold-l);font-size:14px;margin-bottom:24px}
+  #qrbox{background:#fff;border-radius:20px;padding:22px;box-shadow:0 16px 50px rgba(0,0,0,.5);min-width:280px;min-height:280px;
+    display:flex;align-items:center;justify-content:center}
+  #qr img,#qr canvas{display:block}
+  #fallback{color:#1a1410;font-size:12px;word-break:break-all;max-width:280px;display:none}
+  #meta{margin-top:22px;font-size:14px;color:var(--paper)}
+  #count{font-size:32px;font-weight:800;color:var(--gold-l);font-variant-numeric:tabular-nums}
+  .note{margin-top:8px;font-size:12px;color:#9a8f7e;max-width:340px;line-height:1.6}
+  #err{margin-top:14px;color:#e0a; font-size:13px}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div class="crest">圃</div>
+  <h1>포은 정몽주 AR 역사탐방</h1>
+  <div class="sub">아래 QR을 휴대폰 카메라로 스캔해 입장하세요</div>
+  <div id="qrbox"><div id="qr"></div><div id="fallback"></div></div>
+  <div id="meta">새 QR까지 <span id="count">--</span>초</div>
+  <div class="note">보안을 위해 QR은 주기적으로 갱신됩니다. 스캔이 안 되면 잠시 후 갱신된 QR을 다시 시도하세요.</div>
+  <div id="err"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script>
+const qrEl = document.getElementById('qr');
+const fb = document.getElementById('fallback');
+const countEl = document.getElementById('count');
+const errEl = document.getElementById('err');
+let qr = null, rotateSec = 180, remain = 180, tick = null;
+
+function render(url){
+  errEl.textContent = '';
+  if(window.QRCode){
+    qrEl.innerHTML = '';
+    qr = new QRCode(qrEl, { text:url, width:260, height:260, correctLevel: QRCode.CorrectLevel.M });
+    fb.style.display = 'none';
+  }else{
+    // CDN 실패 시 텍스트 폴백 (스캔 대신 주소 입력 가능)
+    fb.textContent = url; fb.style.display = 'block';
+  }
+}
+
+async function refresh(){
+  try{
+    const r = await fetch('/api/qr-token', { cache:'no-store' });
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const d = await r.json();
+    rotateSec = d.rotateSec || 180;
+    remain = rotateSec;
+    render(d.url);
+  }catch(e){
+    errEl.textContent = '토큰을 불러오지 못했습니다. 서버 상태를 확인하세요. ('+e.message+')';
+  }
+}
+
+function startClock(){
+  clearInterval(tick);
+  tick = setInterval(()=>{
+    remain -= 1;
+    countEl.textContent = Math.max(0, remain);
+    if(remain <= 0) refresh();
+  }, 1000);
+}
+
+refresh().then(startClock);
+</script>
+</body>
+</html>

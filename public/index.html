@@ -188,6 +188,17 @@
   .qbtn:disabled{opacity:.45;cursor:default}
   .qbtn:active{transform:scale(.94)}
 
+  /* P5: token gate */
+  #tokengate{position:absolute;inset:0;z-index:24;background:
+    radial-gradient(130% 100% at 50% 0%, #241a14 0%, #14100c 60%, #0b0907 100%);
+    display:none;flex-direction:column;align-items:center;justify-content:center;padding:30px;text-align:center}
+  #tokengate.show{display:flex}
+  #tokengate .tk-ico{font-size:54px;margin-bottom:18px}
+  #tokengate h3{font-size:20px;margin-bottom:10px}
+  #tokengate p{font-size:13.5px;color:var(--paper2);line-height:1.7;max-width:330px;margin-bottom:18px}
+  #tokengate .btn{max-width:300px}
+  #tokengate .note{margin-top:18px;font-size:11px;color:#7a6f5e;max-width:300px;line-height:1.6}
+
   /* P4: rating overlay */
   #rating{position:absolute;inset:0;z-index:30;background:rgba(11,9,7,.92);
     display:none;flex-direction:column;align-items:center;justify-content:center;padding:28px;text-align:center}
@@ -298,6 +309,15 @@
     <button class="btn" id="geoRetry" style="display:none">다시 확인</button>
     <button class="btn ghost" id="geoBypass" style="display:none">미리보기로 둘러보기</button>
     <div class="note" id="geoNote">실제 배포 시 묘 좌표·허용 반경은 운영 설정에서 지정합니다. 현재는 테스트 좌표가 들어 있습니다.</div>
+  </div>
+
+  <!-- (P5) 입장 QR 토큰 게이트 -->
+  <div id="tokengate">
+    <div class="tk-ico" id="tkIco">🎫</div>
+    <h3 id="tkTitle">현장 QR이 필요해요</h3>
+    <p id="tkDesc">AR 체험은 현장 화면의 QR을 스캔해 입장합니다.</p>
+    <button class="btn ghost" id="tkBypass">미리보기로 둘러보기</button>
+    <div class="note">보안을 위해 입장 QR은 주기적으로 갱신되며, 오래된 QR은 만료됩니다.</div>
   </div>
 
   <!-- (P3) API 키 입력 시트 제거: 키는 서버에만 존재 -->
@@ -412,8 +432,37 @@ figure.innerHTML = `
 </svg>`;
 
 /* ---------- intro flow ---------- */
-$('#startAR').onclick = () => { $('#intro').style.display='none'; runGeoGate(()=>askKeyThen(initAR)); };
-$('#startDemo').onclick = () => { $('#intro').style.display='none'; demoBg.classList.add('show'); demoMode=true; askKeyThen(initDemoStage); };
+function enterPreview(){ $('#intro').style.display='none'; $('#tokengate').classList.remove('show'); demoBg.classList.add('show'); demoMode=true; askKeyThen(initDemoStage); }
+$('#startAR').onclick = async () => {
+  $('#intro').style.display='none';
+  if(!(await checkEntryToken())) return; // QR 만료/없음 → 차단 화면
+  runGeoGate(()=>askKeyThen(initAR));
+};
+$('#startDemo').onclick = enterPreview;
+
+/* ---------- P5: 입장 QR 토큰 검증 ---------- */
+const entryToken = new URLSearchParams(location.search).get('t');
+function showTokenGate(title, desc){
+  $('#tkTitle').textContent = title; $('#tkDesc').textContent = desc;
+  $('#tokengate').classList.add('show');
+}
+$('#tkBypass').onclick = enterPreview;
+async function checkEntryToken(){
+  if(!serverChecked) await checkServer();
+  if(!serverAvailable) return true; // 서버 없으면(정적/오프라인) 토큰 검증 생략
+  if(!entryToken){ showTokenGate('현장 QR이 필요해요', 'AR 체험은 현장 화면의 QR을 카메라로 스캔해 입장합니다. 키오스크/안내 화면의 QR을 스캔해 주세요.'); return false; }
+  try{
+    const r = await fetch('/api/verify-token',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({token:entryToken}) });
+    const j = await r.json();
+    if(j.valid) return true;
+    showTokenGate(j.reason==='만료' ? 'QR이 만료되었어요' : '입장 코드가 올바르지 않아요',
+      j.reason==='만료' ? '시간이 지나 만료된 QR입니다. 현장 화면의 새 QR을 다시 스캔해 주세요.' : '유효하지 않은 입장 코드입니다. 현장 화면의 QR을 다시 스캔해 주세요.');
+    return false;
+  }catch(e){
+    showTokenGate('입장 확인 실패', '입장 코드를 확인하지 못했습니다. 잠시 후 QR을 다시 스캔해 주세요.');
+    return false; // 보안 우선: 검증 불가 시 차단(미리보기로 우회 가능)
+  }
+}
 
 /* ---------- geofence config ---------- */
 const SITE = {

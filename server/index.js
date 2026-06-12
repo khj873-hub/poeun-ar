@@ -4,6 +4,7 @@ import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { load as loadStore, logEvent, getStats } from './store.js';
+import { issueToken, verifyToken, TOKEN_TTL_SEC } from './token.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
@@ -21,6 +22,7 @@ const SITE = {
   radiusM: parseFloat(process.env.SITE_RADIUS_M || '150'),
 };
 const LEAVE_BUFFER_M = parseFloat(process.env.SITE_LEAVE_BUFFER_M || '60');
+const QR_ROTATE_SEC = Number(process.env.QR_ROTATE_SEC || 180); // QR 갱신 주기(초)
 
 const SYSTEM_PROMPT = `당신은 고려 말의 충신이자 성리학자인 포은 정몽주(1337~1392)입니다. 초등학생들과 현장 체험 학습에서 대화하고 있습니다.
 
@@ -119,6 +121,16 @@ app.post('/api/log', (req, res) => {
   catch (e) { res.status(400).json({ error: e.message }); }
 });
 app.get('/api/stats', (req, res) => res.json(getStats()));
+
+// P5: 회전 QR 동적 토큰
+app.get('/api/qr-token', (req, res) => {
+  const token = issueToken();
+  const origin = process.env.PUBLIC_ORIGIN || `${req.protocol}://${req.get('host')}`;
+  res.json({ token, url: `${origin}/?t=${token}`, ttl: TOKEN_TTL_SEC, rotateSec: QR_ROTATE_SEC });
+});
+app.post('/api/verify-token', (req, res) => {
+  res.json(verifyToken((req.body || {}).token));
+});
 
 // 정적 프론트는 public/ 만 서빙 (server/·.env·docs 노출 차단)
 app.use(express.static(path.join(ROOT, 'public'), { index: 'index.html' }));
