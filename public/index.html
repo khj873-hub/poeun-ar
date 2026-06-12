@@ -35,20 +35,20 @@
     width:34px;height:120px;background:linear-gradient(180deg,#4a443a,#2b2722);border-radius:6px 6px 0 0}
 
   /* the summoned character (SVG) */
-  #figure{position:absolute;left:50%;bottom:28%;transform:translateX(-50%) translateY(20px);
-    width:200px;max-width:54vw;opacity:0;transition:opacity .8s ease,transform .8s cubic-bezier(.2,.8,.2,1);
+  #figure{position:absolute;left:50%;bottom:44%;transform:translateX(-50%) translateY(20px);
+    width:172px;max-width:48vw;opacity:0;transition:opacity .8s ease,transform .8s cubic-bezier(.2,.8,.2,1);
     filter:drop-shadow(0 18px 24px rgba(0,0,0,.55));pointer-events:none;z-index:4}
   #figure.summoned{opacity:1;transform:translateX(-50%) translateY(0)}
   @keyframes float{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-9px)}}
   #figure.summoned.idle{animation:float 4.5s ease-in-out infinite}
-  .halo{position:absolute;left:50%;bottom:26%;transform:translate(-50%,0);
-    width:230px;height:230px;max-width:60vw;max-height:60vw;border-radius:50%;
+  .halo{position:absolute;left:50%;bottom:43%;transform:translate(-50%,0);
+    width:200px;height:200px;max-width:54vw;max-height:54vw;border-radius:50%;
     background:radial-gradient(circle,rgba(212,178,94,.28) 0%,rgba(212,178,94,0) 65%);
     opacity:0;transition:opacity .8s;z-index:3;pointer-events:none}
   .halo.show{opacity:1}
 
   /* speech bubble above figure */
-  #bubble{position:absolute;left:50%;bottom:calc(28% + 210px);transform:translateX(-50%) scale(.9);
+  #bubble{position:absolute;left:50%;bottom:calc(44% + 232px);transform:translateX(-50%) scale(.9);
     width:min(86vw,440px);background:var(--paper);color:var(--ink);
     border-radius:16px;padding:14px 16px;font-size:15px;line-height:1.6;
     box-shadow:0 14px 40px var(--shadow);opacity:0;transition:opacity .35s,transform .35s;
@@ -96,7 +96,7 @@
     background:linear-gradient(180deg,rgba(12,10,8,0),rgba(12,10,8,.92) 18%);
     padding:30px 12px calc(env(safe-area-inset-bottom) + 12px);
     transform:translateY(0);transition:transform .4s}
-  #log{max-height:30vh;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:10px;padding:0 2px;scrollbar-width:thin}
+  #log{max-height:20vh;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:10px;padding:0 2px;scrollbar-width:thin}
   .msg{max-width:82%;padding:9px 13px;border-radius:14px;font-size:14px;line-height:1.5;word-break:break-word}
   .msg.me{align-self:flex-end;background:var(--jade);color:#eaf6f0;border-bottom-right-radius:4px}
   .msg.po{align-self:flex-start;background:var(--paper);color:var(--ink);border-bottom-left-radius:4px}
@@ -220,9 +220,9 @@
   @keyframes flash{0%{opacity:0}15%{opacity:.85}100%{opacity:0}}
 
   @media(max-height:680px){
-    #figure{width:160px;bottom:30%}
-    #bubble{bottom:calc(30% + 168px)}
-    #log{max-height:24vh}
+    #figure{width:150px;bottom:44%}
+    #bubble{bottom:calc(44% + 200px)}
+    #log{max-height:18vh}
   }
 </style>
 </head>
@@ -398,9 +398,7 @@ figure.innerHTML = `
 <svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg" aria-label="정몽주 표준영정 캐릭터">
   <ellipse cx="100" cy="290" rx="62" ry="9" fill="rgba(0,0,0,.32)"/>
 
-  <!-- 사모 날개(모각) — 머리 뒤 아래쪽, 작게 -->
-  <path d="M72 57 Q59 56 54 61 Q60 64 72 63 Z" fill="#14100c"/>
-  <path d="M128 57 Q141 56 146 61 Q140 64 128 63 Z" fill="#14100c"/>
+  <!-- (사모는 머리 위에 그림 아래에서 한 덩어리로) -->
 
   <!-- 단령(관복) 몸체 -->
   <path d="M60 150 Q52 132 74 126 L126 126 Q148 132 140 150 L168 288 Q100 301 32 288 Z" fill="#3e4f59"/>
@@ -436,20 +434,21 @@ figure.innerHTML = `
   <!-- 코 -->
   <path d="M100 86 L96 101 Q100 105 104 101" stroke="#d3a273" stroke-width="2" fill="none" stroke-linecap="round"/>
 
-  <!-- 긴 수염(턱~가슴까지 흘러내림) -->
-  <path d="M71 99 Q68 150 100 174 Q132 150 129 99 Q121 124 100 126 Q79 124 71 99 Z" fill="#bdb6a6"/>
-  <path d="M82 124 Q88 152 96 168" stroke="#a39c8b" stroke-width="1.6" fill="none" stroke-linecap="round"/>
-  <path d="M100 126 L100 172" stroke="#a39c8b" stroke-width="1.6" fill="none" stroke-linecap="round"/>
-  <path d="M118 124 Q112 152 104 168" stroke="#a39c8b" stroke-width="1.6" fill="none" stroke-linecap="round"/>
-  <!-- 콧수염(드리운) -->
-  <path d="M80 92 Q90 97 100 95 Q110 97 120 92 Q113 105 100 101 Q87 105 80 92 Z" fill="#b0a999"/>
+  <!-- 콧수염 -->
+  <path d="M81 92 Q90 98 100 96 Q110 98 119 92 Q112 104 100 100 Q88 104 81 92 Z" fill="#b3ac9c"/>
+  <!-- 짧은 턱수염 -->
+  <path d="M83 105 Q82 127 100 135 Q118 127 117 105 Q109 118 100 119 Q91 118 83 105 Z" fill="#c2bbac"/>
+  <path d="M92 119 Q100 130 108 119" stroke="#a89f8d" stroke-width="1.3" fill="none" stroke-linecap="round"/>
 
-  <!-- 사모(紗帽): 뒤가 높은 2단 검은 관모 (머리에 밀착, 챙 없음) -->
-  <path d="M73 56 Q72 21 100 18 Q128 21 127 56 Z" fill="#171209"/>
-  <ellipse cx="100" cy="20" rx="20" ry="5" fill="#231a10"/>
-  <path d="M77 58 Q77 37 100 34 Q123 37 123 58 Z" fill="#1f1810"/>
-  <ellipse cx="100" cy="36" rx="16" ry="4.5" fill="#291f14"/>
-  <path d="M84 32 Q88 24 97 22" stroke="#3a3026" stroke-width="2" fill="none" stroke-linecap="round" opacity=".5"/>
+  <!-- 사모(紗帽): 머리를 덮는 길고 넓은 검은 관모 + 평평한 양옆 날개(모각) -->
+  <ellipse cx="60" cy="60" rx="15" ry="7" fill="#161009"/>
+  <ellipse cx="140" cy="60" rx="15" ry="7" fill="#161009"/>
+  <ellipse cx="57" cy="60" rx="5" ry="4.5" fill="#23190f"/>
+  <ellipse cx="143" cy="60" rx="5" ry="4.5" fill="#23190f"/>
+  <path d="M66 56 Q63 15 100 12 Q137 15 134 56 Z" fill="#161009"/>
+  <ellipse cx="100" cy="16" rx="33" ry="8" fill="#201810"/>
+  <path d="M68 44 Q100 38 132 44" stroke="#231a10" stroke-width="2.5" fill="none" stroke-linecap="round" opacity=".7"/>
+  <path d="M80 28 Q86 19 97 17" stroke="#352b1e" stroke-width="2" fill="none" stroke-linecap="round" opacity=".5"/>
 </svg>`;
 
 /* ---------- intro flow ---------- */
