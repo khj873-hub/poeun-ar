@@ -666,10 +666,49 @@ function captureFrame(){
   return null; // 데모: 실제 카메라 없음
 }
 async function judgePhoto(mission,img){
-  await new Promise(r=>setTimeout(r,1100)); // 판정 연출 지연
-  if(demoMode || !apiKey) return { pass:true, reason:'데모 모드 자동 통과' };
-  // TODO(P2): aiVision → Claude 비전 호출 / imageTarget → AR 인식 결과 연동
-  return { pass:true, reason:'' };
+  // 데모/키없음: 앱이 죽지 않도록 항상 통과 (P2 실패조건 대응)
+  if(demoMode || !apiKey){ await new Promise(r=>setTimeout(r,1100)); return { pass:true, reason:'데모 모드 자동 통과' }; }
+  // imageTarget: 유물별 .mind 인식으로 통과 처리. [CONFIRM] 실제 배포 시 유물 .mind 등록 필요 → 현재는 통과
+  if(mission.targetType!=='aiVision'){ await new Promise(r=>setTimeout(r,700)); return { pass:true, reason:'이미지 타겟 인식' }; }
+  // aiVision: 실제 Claude 비전 판정
+  if(!img) return { pass:false, error:true, reason:'사진을 담지 못했네' };
+  try{ return await callVision(mission,img); }
+  catch(e){ console.error('vision error', e); return { pass:false, error:true, reason:'판정 연결 실패' }; }
+}
+// P2: 촬영 사진을 Claude 비전 API로 판정 (P3에서 서버 /api/vision 경유로 이전 예정)
+async function callVision(mission, dataUrl){
+  const m = /^data:(image\/[\w.+-]+);base64,(.+)$/.exec(dataUrl) || [];
+  const mediaType = m[1] || 'image/jpeg';
+  const b64 = m[2] || dataUrl.replace(/^data:[^,]+,/, '');
+  const res = await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({
+      model:'claude-sonnet-4-20250514', max_tokens:120,
+      system:`너는 현장학습 사진을 검수하는 판정기다. 사진에 "${mission.target}"이(가) 분명히 보이면 통과다. 반드시 아래 형식의 JSON 한 줄로만 답하라. 다른 말은 절대 쓰지 마라.\n{"ok": true 또는 false, "why": "한국어 한 줄 이유"}`,
+      messages:[{ role:'user', content:[
+        { type:'image', source:{ type:'base64', media_type:mediaType, data:b64 } },
+        { type:'text', text:`이 사진에 ${mission.target}이(가) 있는가? JSON으로만 답하라.` }
+      ]}]
+    })
+  });
+  const data = await res.json();
+  if(data.error) throw new Error(data.error.message || 'api error');
+  const text = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('').trim();
+  return parseVerdict(text);
+}
+// 응답 안전 파싱: JSON 우선 → 텍스트 폴백 → 모호하면 보수적 실패
+function parseVerdict(text){
+  try{
+    const j = JSON.parse(text);
+    if(typeof j.ok==='boolean') return { pass:j.ok, reason:(j.why||'').toString().slice(0,50) };
+  }catch(e){}
+  const t = (text||'').toLowerCase();
+  const pos = /(true|"ok"\s*:\s*true|있|통과|맞|yes\b)/.test(t);
+  const neg = /(false|"ok"\s*:\s*false|없|아니|불통|틀|no\b)/.test(t);
+  if(pos && !neg) return { pass:true, reason:(text||'').slice(0,50) };
+  if(neg && !pos) return { pass:false, reason:(text||'').slice(0,50) };
+  return { pass:false, reason:(text? text.slice(0,50):'판정이 분명치 않네') };
 }
 function doFlash(){ flashEl.classList.remove('go'); void flashEl.offsetWidth; flashEl.classList.add('go'); }
 
@@ -683,10 +722,11 @@ qCapture.onclick = async ()=>{
   const img=captureFrame();
   let v;
   try{ v=await judgePhoto(m,img); }
-  catch(e){ console.error(e); v={pass:false,reason:'판정 오류'}; }
-  if(m.targetType==='aiVision') visionCalls++;
+  catch(e){ console.error(e); v={pass:false,error:true,reason:'판정 오류'}; }
   judging=false;
-  if(v.pass) onPass(m); else onFail(m);
+  if(v.error){ setReady(true); poSay('허허, 사진이 흐릿해 잘 보이질 않는구나. 다시 한 번 또렷이 담아주겠는가?'); return; }
+  if(m.targetType==='aiVision') visionCalls++; // 실제 판정이 이뤄진 경우만 호출 카운트(에러는 미소모)
+  if(v.pass) onPass(m); else onFail(m,v);
 };
 qHint.onclick = ()=>{ if(!questActive||judging) return; poSay(nextHint(missions[mIdx])); };
 
@@ -697,8 +737,9 @@ function onPass(m){
   sys(`미션 ${mIdx+1} 인증 완료 · ${m.target}`);
   setTimeout(()=>{ mIdx++; presentMission(); }, 3400); // 인증 없이 다음 미션 못 열림(이 경로로만 진행)
 }
-function onFail(m){
+function onFail(m,v){
   failCount++; setReady(true);
+  if(v && v.reason && !demoMode) sys(`판정: ${v.reason}`);
   poSay(failCount>=3 ? locationHint(m) : nextHint(m));
 }
 function finishQuest(){
